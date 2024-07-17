@@ -1,0 +1,51 @@
+//setup
+acqName = gui.getUniqueAcquisitionName("eye");
+rootDirName = "C:/eye";
+nrFrames = 180;
+nrChannels = nrSlices = nrPositions = 1;
+
+width = (int) mmc.getImageWidth();
+height = (int) mmc.getImageHeight();
+bytesPerPixel = (int) mmc.getBytesPerPixel();
+bitDepth = (int) mmc.getImageBitDepth();
+print(mmc.getProperty("Arduino-Input","AnalogInput0"));
+ 
+while (1==1) {
+	//mmc.setShutterOpen(true);
+analogVal = Double.parseDouble(mmc.getProperty("Arduino-Input","AnalogInput0"));
+if (analogVal > 900) {
+	
+	acqName = gui.getUniqueAcquisitionName("eye");
+        gui.openAcquisition(acqName, rootDirName,
+                nrFrames, nrChannels, nrSlices, nrPositions,
+                /* show */ true,
+                /* save */ true);
+    
+            gui.initializeAcquisition(acqName, width, height, bytesPerPixel, bitDepth);
+
+            mmc.startSequenceAcquisition(nrFrames, 0, true);
+            frame = 0;
+            exposureMs = mmc.getExposure();
+          // mmc.startContinuousSequenceAcquisition(mmc.getExposure());
+
+            while (mmc.getRemainingImageCount() > 0 || mmc.isSequenceRunning() ){
+             while (analogVal > 900) {
+               if (mmc.getRemainingImageCount() > 0) {
+               	//img = mmc.popNextTaggedImage();
+               	//print(frame);
+               	//print(mmc.getRemainingImageCount());
+               	mmc.sleep(exposureMs);
+               	img = mmc.popNextTaggedImage();
+               	gui.snapAndAddImage(acqName, frame, 0, 0, 0);
+                  //gui.addImageToAcquisition(acqName, frame, 0, 0, 0, img);
+                  frame++;
+               } else {
+                  mmc.sleep(Math.min(0.5 * exposureMs, 20));
+               }
+               analogVal = Double.parseDouble(mmc.getProperty("Arduino-Input","AnalogInput0"));
+            }
+            }
+          
+            mmc.stopSequenceAcquisition();
+    } 
+}

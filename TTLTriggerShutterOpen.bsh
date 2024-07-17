@@ -1,0 +1,40 @@
+//setup
+acqName = gui.getUniqueAcquisitionName("781241");
+rootDirName = "C:/781241-Sept02-19-Assessment";
+nrFrames = 95;
+nrChannels = nrSlices = nrPositions = 1;
+
+width = (int) mmc.getImageWidth();
+height = (int) mmc.getImageHeight();
+bytesPerPixel = (int) mmc.getBytesPerPixel();
+bitDepth = (int) mmc.getImageBitDepth();
+print(mmc.getProperty("Arduino-Input","AnalogInput0"));
+ 
+while (1==1) {
+	mmc.setShutterOpen(true);
+analogVal = Double.parseDouble(mmc.getProperty("Arduino-Input","AnalogInput0"));
+if (analogVal > 900) {
+	acqName = gui.getUniqueAcquisitionName("781241");
+        gui.openAcquisition(acqName, rootDirName,
+                nrFrames, nrChannels, nrSlices, nrPositions,
+                /* show */ true,
+                /* save */ true);
+    
+            gui.initializeAcquisition(acqName, width, height, bytesPerPixel, bitDepth);
+            mmc.startSequenceAcquisition(nrFrames, 0, true);
+            frame = 0;
+            exposureMs = mmc.getExposure();
+            while (analogVal > 900) {
+               if (mmc.getRemainingImageCount() > 0) {
+                  img = mmc.popNextTaggedImage();
+                  gui.addImageToAcquisition(acqName, frame, 0, 0, 0, img);
+                  frame++;
+               } else {
+                  mmc.sleep(Math.min(0.5 * exposureMs, 20));
+               }
+               analogVal = Double.parseDouble(mmc.getProperty("Arduino-Input","AnalogInput0"));
+            }
+            mmc.stopSequenceAcquisition();
+            
+    } 
+}
